@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TaskFlow – Frontend Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0b0e18; color: #e2e8f0; font-family: 'DM Sans', sans-serif; }
+
+/* ---- shared ---- */
+.topbar {
+  border-bottom: 1px solid #1e2535;
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f1319;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo-wrap { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg,#818cf8,#38bdf8); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; }
+.crumb { font-family: 'DM Mono', monospace; font-size: 11px; color: #334155; margin-left: 4px; }
+.mono { font-family: 'DM Mono', monospace; }
+.tab-group { display: flex; gap: 4px; background: #141824; border: 1px solid #1e2535; border-radius: 8px; padding: 3px; }
+.tab { background: transparent; border: none; color: #475569; border-radius: 6px; padding: 5px 14px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all .12s; }
+.tab.active { background: #1e2535; color: #e2e8f0; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ---- nav pills ---- */
+.bottom-nav {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #141824dd; backdrop-filter: blur(12px);
+  border: 1px solid #1e2535; border-radius: 50px;
+  padding: 6px 8px; display: flex; gap: 4px; z-index: 999;
+  box-shadow: 0 8px 32px #000a;
+}
+.nav-btn { background: transparent; border: none; color: #475569; border-radius: 40px; padding: 7px 18px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all .15s; }
+.nav-btn.active { background: #1e2535; color: #e2e8f0; }
+
+/* ---- Login ---- */
+.login-bg {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  background: #0b0e18;
+}
+.login-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(#1e253511 1px,transparent 1px), linear-gradient(90deg,#1e253511 1px,transparent 1px);
+  background-size: 48px 48px;
+}
+.login-glow {
+  position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, #818cf81a 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-card { background: #141824; border: 1px solid #1e2535; border-radius: 20px; padding: 36px 32px; width: 420px; box-shadow: 0 24px 80px #000b; position: relative; }
+.login-logo { text-align: center; margin-bottom: 36px; }
+.login-logo .brand { display: inline-flex; align-items: center; gap: 10px; }
+.login-logo .brand-icon { width: 36px; height: 36px; background: linear-gradient(135deg,#818cf8,#38bdf8); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.login-logo .brand-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+.login-logo p { font-size: 14px; color: #475569; margin-top: 8px; }
+.field-label { display: block; font-family: 'DM Mono', monospace; font-size: 10px; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.inp { width: 100%; background: #0f1319; border: 1px solid #1e2535; border-radius: 8px; padding: 10px 13px; color: #cbd5e1; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; margin-bottom: 16px; }
+.inp:focus { border-color: #818cf844; }
+.login-btn {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg,#818cf8,#6366f1);
+  border: none; border-radius: 10px; color: #fff;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  cursor: pointer; letter-spacing: .02em; box-shadow: 0 4px 24px #818cf840;
+  transition: opacity .15s;
+}
+.login-btn:hover { opacity: .9; }
+.login-footnote { text-align: center; font-family: 'DM Mono', monospace; font-size: 11px; color: #1e2535; margin-top: 20px; }
+
+/* ---- Dashboard ---- */
+.main { max-width: 1200px; margin: 0 auto; padding: 32px; padding-bottom: 100px; }
+.page-title { margin-bottom: 28px; }
+.page-title h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.03em; }
+.page-title p { font-size: 14px; color: #475569; margin-top: 4px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: #141824; border: 1px solid #1e2535; border-radius: 12px; padding: 18px 20px; }
+.stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: #475569; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+.stat-value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 32px; }
+.filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.search-inp { background: #141824; border: 1px solid #1e2535; border-radius: 8px; padding: 8px 13px; color: #cbd5e1; font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; min-width: 200px; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(340px,1fr)); gap: 14px; }
+.task-card { background: #141824; border: 1px solid #1e2535; border-radius: 12px; padding: 20px 22px; transition: all .18s; cursor: default; }
+.task-card:hover { background: #1a1f2e; border-color: #334155; transform: translateY(-2px); box-shadow: 0 8px 32px #0007; }
+.task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.task-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: #e2e8f0; margin-bottom: 4px; }
+.task-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: #475569; }
+.task-desc { font-size: 13px; color: #64748b; line-height: 1.55; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.task-due { font-family: 'DM Mono', monospace; font-size: 11px; color: #475569; margin-bottom: 14px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.act-btn { background: transparent; border-radius: 6px; padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: .06em; cursor: pointer; transition: all .15s; }
+.badges { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.priority-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.priority-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.status-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px; letter-spacing: .08em; }
+
+/* ---- Modal ---- */
+.modal-overlay { position: fixed; inset: 0; background: #00000088; backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity .22s; pointer-events: none; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: #141824; border: 1px solid #1e2535; border-radius: 16px; padding: 32px 36px; width: 520px; box-shadow: 0 24px 80px #000a; transform: translateY(24px); transition: transform .22s; }
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: #e2e8f0; margin-bottom: 2px; }
+.modal-id { font-family: 'DM Mono', monospace; font-size: 11px; color: #475569; margin-bottom: 24px; }
+.modal-field { margin-bottom: 14px; }
+.modal-inp { width: 100%; background: #0f1319; border: 1px solid #1e2535; border-radius: 8px; padding: 9px 12px; color: #cbd5e1; font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; }
+.modal-ta { width: 100%; background: #0f1319; border: 1px solid #1e2535; border-radius: 8px; padding: 9px 12px; color: #cbd5e1; font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; resize: vertical; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel { padding: 9px 20px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; background: transparent; border: 1px solid #1e2535; color: #64748b; transition: all .15s; }
+.btn-approve { padding: 9px 20px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; background: linear-gradient(135deg,#22c55e22,#22c55e11); border: 1px solid #22c55e55; color: #22c55e; transition: all .15s; }
+
+/* ---- Calendar ---- */
+.cal-wrap { display: flex; gap: 24px; align-items: flex-start; }
+.cal-main { flex: 1; }
+.cal-side { width: 300px; flex-shrink: 0; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.cal-month { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.03em; }
+.cal-nav-btn { background: #141824; border: 1px solid #1e2535; border-radius: 8px; color: #475569; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+.day-headers { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 4px; }
+.day-header { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: #334155; letter-spacing: .08em; padding: 6px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.cal-cell { min-height: 76px; background: #141824; border: 1px solid #1a2030; border-radius: 10px; padding: 8px 9px; cursor: pointer; transition: all .12s; }
+.cal-cell:hover { background: #1a1f2e; border-color: #334155; }
+.cal-cell.selected { background: #1e2535; border-color: #334155; }
+.cal-cell.today .day-num { color: #818cf8; font-weight: 700; }
+.day-num { font-family: 'DM Mono', monospace; font-size: 12px; color: #64748b; margin-bottom: 4px; }
+.event-pill { border-radius: 3px; padding: 1px 5px; font-family: 'DM Mono', monospace; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+.side-card { background: #141824; border: 1px solid #1e2535; border-radius: 14px; padding: 22px 20px; margin-bottom: 14px; }
+.side-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+.side-count { font-family: 'DM Mono', monospace; font-size: 10px; color: #475569; letter-spacing: .08em; margin-bottom: 18px; }
+.ev-card { background: #0f1319; border-radius: 8px; padding: 12px 13px; margin-bottom: 10px; }
+.ev-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; color: #e2e8f0; margin-bottom: 5px; }
+.ev-row { display: flex; align-items: center; justify-content: space-between; }
+.ev-time { font-family: 'DM Mono', monospace; font-size: 10px; color: #475569; }
+.ev-who { font-family: 'DM Mono', monospace; font-size: 10px; color: #334155; margin-top: 5px; }
+.upcoming-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.up-bar { width: 3px; height: 36px; border-radius: 2px; flex-shrink: 0; }
+.up-name { font-family: 'DM Sans', sans-serif; font-size: 12px; color: #cbd5e1; font-weight: 500; }
+.up-date { font-family: 'DM Mono', monospace; font-size: 10px; color: #475569; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg">
+    <div class="login-grid"></div>
+    <div class="login-glow"></div>
+    <div style="position:relative; width:100%; max-width:420px; padding:0 20px;">
+      <div class="login-logo">
+        <div class="brand">
+          <div class="brand-icon">⬡</div>
+          <span class="brand-name">TaskFlow</span>
+        </div>
+        <p>Sign in to your workspace</p>
+      </div>
+      <div class="login-card">
+        <div>
+          <label class="field-label">Email address</label>
+          <input class="inp" type="email" value="admin@company.com" placeholder="you@company.com"/>
+        </div>
+        <div>
+          <label class="field-label">Password</label>
+          <input class="inp" type="password" value="password123" placeholder="••••••••"/>
+        </div>
+        <button class="login-btn" onclick="showApp()">Sign in →</button>
+      </div>
+      <p class="login-footnote">JWT · Token stored in memory only</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP SCREEN (Dashboard + Calendar) -->
+<div id="screen-app" class="screen">
+  <!-- Dashboard -->
+  <div id="page-dashboard" class="screen active">
+    <header class="topbar">
+      <div class="logo-wrap">
+        <div class="logo-icon">⬡</div>
+        <span class="logo-text">TaskFlow</span>
+        <span class="crumb">/ dashboard</span>
+      </div>
+      <span class="mono" style="font-size:11px;color:#475569;" id="today-date"></span>
+    </header>
+    <div class="main">
+      <div class="page-title">
+        <h1>Task Dashboard</h1>
+        <p>Manage, approve, and track work across your team</p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" style="color:#818cf8" id="stat-total">8</div></div>
+        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" style="color:#f59e0b" id="stat-pending">5</div></div>
+        <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value" style="color:#22c55e" id="stat-approved">2</div></div>
+        <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value" style="color:#38bdf8" id="stat-completed">1</div></div>
+      </div>
+      <div class="filters">
+        <input class="search-inp" type="text" placeholder="Search tasks…" oninput="filterTasks(this.value)"/>
+        <div class="tab-group" id="status-tabs">
+          <button class="tab active" onclick="setStatus(this,'All')">All</button>
+          <button class="tab" onclick="setStatus(this,'pending')">Pending <span style="opacity:.6">5</span></button>
+          <button class="tab" onclick="setStatus(this,'approved')">Approved <span style="opacity:.6">2</span></button>
+          <button class="tab" onclick="setStatus(this,'rejected')">Rejected <span style="opacity:.6">0</span></button>
+          <button class="tab" onclick="setStatus(this,'completed')">Completed <span style="opacity:.6">1</span></button>
+        </div>
+      </div>
+      <div class="task-grid" id="task-grid"></div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div id="page-calendar" class="screen">
+    <header class="topbar">
+      <div class="logo-wrap">
+        <div class="logo-icon">⬡</div>
+        <span class="logo-text">TaskFlow</span>
+        <span class="crumb">/ calendar</span>
+      </div>
+    </header>
+    <div class="main">
+      <div class="cal-wrap">
+        <div class="cal-main">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+            <span class="cal-month" id="cal-heading"></span>
+            <button class="cal-nav-btn" onclick="calNext()">›</button>
+          </div>
+          <div class="day-headers">
+            <div class="day-header">Sun</div><div class="day-header">Mon</div><div class="day-header">Tue</div>
+            <div class="day-header">Wed</div><div class="day-header">Thu</div><div class="day-header">Fri</div><div class="day-header">Sat</div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="cal-side" id="cal-side"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-dash" onclick="showPage('dashboard')">⬛ Dashboard</button>
+    <button class="nav-btn" id="nav-cal" onclick="showPage('calendar')">◫ Calendar</button>
+    <button class="nav-btn" onclick="showLogin()" style="color:#334155;">Sign out</button>
+  </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div>
+        <div class="modal-title">Review Task</div>
+        <div class="modal-id" id="modal-id"></div>
+      </div>
+      <button onclick="closeModal()" style="background:none;border:none;color:#475569;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div class="modal-field">
+      <label class="field-label">Title</label>
+      <input class="modal-inp" id="modal-title" type="text"/>
+    </div>
+    <div class="modal-field">
+      <label class="field-label">Description</label>
+      <textarea class="modal-ta" id="modal-desc" rows="3"></textarea>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label class="field-label">Priority</label>
+        <select class="modal-inp" id="modal-priority" onchange="updatePreviewBadge()">
+          <option>High</option><option selected>Medium</option><option>Low</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="field-label">Due Date</label>
+        <input class="modal-inp" id="modal-due" type="date"/>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="field-label">Approval Notes</label>
+      <textarea class="modal-ta" id="modal-notes" rows="2" placeholder="Add notes…"></textarea>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;padding:10px 14px;background:#0f1319;border-radius:8px;border:1px solid #1e2535;">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:#475569;">Preview:</span>
+      <span id="preview-badge"></span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-approve" onclick="confirmApprove()">Approve Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const today = new Date();
+
+// ─── Tasks ───
+let tasks = [
+  {id:"TSK-001",title:"Redesign onboarding flow",description:"Update user onboarding to reflect new brand guidelines and simplify the 5-step process.",priority:"High",assignee:"sara.chen",status:"pending",dueDate:"2026-04-10"},
+  {id:"TSK-002",title:"Fix payment gateway timeout",description:"Stripe webhook responses are timing out under load. Needs investigation into retry logic.",priority:"High",assignee:"james.wu",status:"pending",dueDate:"2026-03-30"},
+  {id:"TSK-003",title:"Write API documentation",description:"Document all v2 endpoints with request/response examples and authentication notes.",priority:"Medium",assignee:"priya.r",status:"approved",dueDate:"2026-04-15"},
+  {id:"TSK-004",title:"Set up CI/CD pipeline",description:"Configure GitHub Actions for automated testing, staging deploys, and production releases.",priority:"Medium",assignee:"tom.blake",status:"pending",dueDate:"2026-04-01"},
+  {id:"TSK-005",title:"Migrate legacy database tables",description:"Move user_data and sessions tables to new schema. Requires zero-downtime migration strategy.",priority:"High",assignee:"sara.chen",status:"rejected",dueDate:"2026-03-28"},
+  {id:"TSK-006",title:"Add dark mode to settings",description:"Implement theme toggle using CSS variables. Persist preference in localStorage.",priority:"Low",assignee:"lei.zhou",status:"completed",dueDate:"2026-03-20"},
+  {id:"TSK-007",title:"Load test checkout service",description:"Run k6 load tests at 2× peak traffic. Identify bottlenecks and document findings.",priority:"Medium",assignee:"james.wu",status:"pending",dueDate:"2026-04-05"},
+  {id:"TSK-008",title:"Update privacy policy",description:"Reflect GDPR Article 17 changes, update data retention clauses, have legal review.",priority:"Low",assignee:"maya.patel",status:"approved",dueDate:"2026-04-20"},
+];
+
+const EVENTS = [
+  {id:"E-01",title:"Sprint Planning",date:"2026-03-25",time:"10:00",duration:90,priority:"High",assignee:"team",color:"#818cf8"},
+  {id:"E-02",title:"API Doc Review",date:"2026-03-25",time:"14:00",duration:30,priority:"Medium",assignee:"priya.r",color:"#38bdf8"},
+  {id:"E-03",title:"Design Handoff",date:"2026-03-26",time:"09:30",duration:60,priority:"High",assignee:"sara.chen",color:"#818cf8"},
+  {id:"E-04",title:"DB Migration Dry Run",date:"2026-03-26",time:"15:00",duration:45,priority:"High",assignee:"sara.chen",color:"#f43f5e"},
+  {id:"E-05",title:"1:1 James",date:"2026-03-27",time:"11:00",duration:30,priority:"Low",assignee:"james.wu",color:"#22c55e"},
+  {id:"E-06",title:"Load Test Setup",date:"2026-03-27",time:"14:30",duration:120,priority:"Medium",assignee:"james.wu",color:"#38bdf8"},
+  {id:"E-07",title:"Quarterly Review",date:"2026-03-28",time:"13:00",duration:90,priority:"High",assignee:"team",color:"#818cf8"},
+  {id:"E-08",title:"Privacy Policy Sign-off",date:"2026-03-31",time:"10:00",duration:30,priority:"Low",assignee:"maya.patel",color:"#22c55e"},
+  {id:"E-09",title:"CI/CD Demo",date:"2026-04-01",time:"16:00",duration:45,priority:"Medium",assignee:"tom.blake",color:"#38bdf8"},
+  {id:"E-10",title:"Onboarding Workshop",date:"2026-04-02",time:"09:00",duration:120,priority:"High",assignee:"sara.chen",color:"#818cf8"},
+];
+
+let statusFilter = "All", searchQuery = "", modalTaskId = null;
+let calYear = today.getFullYear(), calMonth = today.getMonth(), calSelected = today.getDate();
+
+// ─── priority ───
+const PCFG = {
+  High:   {label:"HIGH", bg:"#ff2d2d22", color:"#ff2d2d", border:"#ff2d2d55", dot:"#ff2d2d"},
+  Medium: {label:"MED",  bg:"#f59e0b22", color:"#f59e0b", border:"#f59e0b55", dot:"#f59e0b"},
+  Low:    {label:"LOW",  bg:"#22c55e22", color:"#22c55e", border:"#22c55e55", dot:"#22c55e"},
+};
+const SCFG = {
+  pending:  {color:"#f59e0b", label:"Pending"},
+  approved: {color:"#22c55e", label:"Approved"},
+  rejected: {color:"#ff2d2d", label:"Rejected"},
+  completed:{color:"#818cf8", label:"Completed"},
+};
+
+function priorityBadgeHTML(p) {
+  const c = PCFG[p]||PCFG.Low;
+  return `<span class="priority-badge" style="background:${c.bg};border:1px solid ${c.border};color:${c.color}"><span class="priority-dot" style="background:${c.dot}"></span>${c.label}</span>`;
+}
+
+function updateStats() {
+  document.getElementById("stat-total").textContent = tasks.length;
+  document.getElementById("stat-pending").textContent = tasks.filter(t=>t.status==="pending").length;
+  document.getElementById("stat-approved").textContent = tasks.filter(t=>t.status==="approved").length;
+  document.getElementById("stat-completed").textContent = tasks.filter(t=>t.status==="completed").length;
+}
+
+function renderTasks() {
+  updateStats();
+  const filtered = tasks.filter(t => {
+    if (statusFilter !== "All" && t.status !== statusFilter) return false;
+    if (searchQuery && !t.title.toLowerCase().includes(searchQuery) && !t.id.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
+  const grid = document.getElementById("task-grid");
+  if (!filtered.length) { grid.innerHTML = `<div style="text-align:center;padding:60px 0;color:#334155;font-family:'DM Mono',monospace;font-size:13px;grid-column:1/-1;">No tasks match your filters</div>`; return; }
+  grid.innerHTML = filtered.map(t => {
+    const sc = SCFG[t.status]||SCFG.pending;
+    const due = t.dueDate ? `<div class="task-due">Due ${new Date(t.dueDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>` : "";
+    const approveBtn = t.status==="pending" ? `<button class="act-btn" style="border:1px solid #22c55e44;color:#22c55eaa" onclick="openApprove('${t.id}')">Approve</button><button class="act-btn" style="border:1px solid #ff2d2d44;color:#ff2d2daa" onclick="rejectTask('${t.id}')">Reject</button>` : "";
+    const completeBtn = t.status!=="completed" ? `<button class="act-btn" style="border:1px solid #38bdf844;color:#38bdf8aa" onclick="completeTask('${t.id}')">Complete</button>` : "";
+    return `<div class="task-card">
+      <div class="task-header">
+        <div style="flex:1;min-width:0">
+          <div class="task-title">${t.title}</div>
+          <div class="task-meta">#${t.id} · ${t.assignee}</div>
+        </div>
+        <div class="badges">
+          ${priorityBadgeHTML(t.priority)}
+          <span class="status-badge" style="background:${sc.color}18;color:${sc.color};border:1px solid ${sc.color}33">${sc.label}</span>
+        </div>
+      </div>
+      ${t.description?`<p class="task-desc">${t.description}</p>`:""}
+      ${due}
+      <div class="actions">
+        ${approveBtn}
+        <button class="act-btn" style="border:1px solid #818cf844;color:#818cf8aa" onclick="openEdit('${t.id}')">Edit</button>
+        ${completeBtn}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function setStatus(btn, s) {
+  document.querySelectorAll("#status-tabs .tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  statusFilter = s;
+  renderTasks();
+}
+
+function filterTasks(q) { searchQuery = q.toLowerCase(); renderTasks(); }
+
+// ─── actions ───
+function rejectTask(id) {
+  const t = tasks.find(t=>t.id===id);
+  if (confirm(`Reject "${t.title}"?`)) { t.status = "rejected"; renderTasks(); }
+}
+function completeTask(id) { tasks.find(t=>t.id===id).status="completed"; renderTasks(); }
+
+// ─── modal ───
+function openApprove(id) { openModal(id); }
+function openEdit(id) { openModal(id); }
+function openModal(id) {
+  const t = tasks.find(t=>t.id===id);
+  modalTaskId = id;
+  document.getElementById("modal-id").textContent = "#"+t.id;
+  document.getElementById("modal-title").value = t.title;
+  document.getElementById("modal-desc").value = t.description||"";
+  document.getElementById("modal-priority").value = t.priority;
+  document.getElementById("modal-due").value = t.dueDate||"";
+  document.getElementById("modal-notes").value = "";
+  updatePreviewBadge();
+  document.getElementById("modal").classList.add("open");
+}
+function closeModal() { document.getElementById("modal").classList.remove("open"); }
+function confirmApprove() {
+  const t = tasks.find(t=>t.id===modalTaskId);
+  t.title = document.getElementById("modal-title").value;
+  t.description = document.getElementById("modal-desc").value;
+  t.priority = document.getElementById("modal-priority").value;
+  t.dueDate = document.getElementById("modal-due").value;
+  if (t.status==="pending") t.status = "approved";
+  closeModal();
+  renderTasks();
+}
+function updatePreviewBadge() {
+  document.getElementById("preview-badge").innerHTML = priorityBadgeHTML(document.getElementById("modal-priority").value);
+}
+document.getElementById("modal").addEventListener("click", e => { if (e.target===e.currentTarget) closeModal(); });
+
+// ─── navigation ───
+function showApp() {
+  document.getElementById("screen-login").classList.remove("active");
+  document.getElementById("screen-app").classList.add("active");
+  document.getElementById("today-date").textContent = today.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  renderTasks();
+  renderCalendar();
+}
+function showLogin() {
+  document.getElementById("screen-app").classList.remove("active");
+  document.getElementById("screen-login").classList.add("active");
+}
+function showPage(p) {
+  ["dashboard","calendar"].forEach(id => {
+    document.getElementById("page-"+id).classList[id===p?"add":"remove"]("active");
+    document.getElementById("nav-"+id.slice(0,4)).classList[id===p?"add":"remove"]("active");
+  });
+  if (p==="calendar") renderCalendar();
+}
+
+// ─── Calendar ───
+function eventsForDate(d) {
+  const ds = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  return EVENTS.filter(e=>e.date===ds);
+}
+
+function renderCalendar() {
+  document.getElementById("cal-heading").innerHTML = `${MONTHS[calMonth]} <span style="color:#475569">${calYear}</span>`;
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days = new Date(calYear, calMonth+1, 0).getDate();
+  const grid = document.getElementById("cal-grid");
+  let html = "";
+  for (let i=0; i<first; i++) html += `<div></div>`;
+  for (let d=1; d<=days; d++) {
+    const evs = eventsForDate(d);
+    const isToday = d===today.getDate() && calMonth===today.getMonth() && calYear===today.getFullYear();
+    const isSel = d===calSelected;
+    const pills = evs.slice(0,2).map(e=>`<div class="event-pill" style="background:${e.color}25;border:1px solid ${e.color}40;color:${e.color}">${e.time} ${e.title}</div>`).join("")
+      + (evs.length>2 ? `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#334155">+${evs.length-2} more</div>` : "");
+    html += `<div class="cal-cell${isSel?" selected":""}${isToday?" today":""}" onclick="selectDay(${d})">
+      <div class="day-num">${d}</div>${pills}</div>`;
+  }
+  grid.innerHTML = html;
+  renderSide();
+}
+
+function selectDay(d) { calSelected=d; renderCalendar(); }
+function calPrev() { if(calMonth===0){calYear--;calMonth=11;}else calMonth--; renderCalendar(); }
+function calNext() { if(calMonth===11){calYear++;calMonth=0;}else calMonth++; renderCalendar(); }
+
+function renderSide() {
+  const ds = `${calYear}-${String(calMonth+1).padStart(2,"0")}-${String(calSelected).padStart(2,"0")}`;
+  const evs = EVENTS.filter(e=>e.date===ds).sort((a,b)=>a.time.localeCompare(b.time));
+  const evHTML = evs.length===0
+    ? `<div style="color:#334155;font-family:'DM Mono',monospace;font-size:12px;text-align:center;padding:24px 0">No events scheduled</div>`
+    : evs.map(e=>`<div class="ev-card" style="border:1px solid ${e.color}30;border-left:3px solid ${e.color}">
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-row"><div class="ev-time">${e.time} · ${e.duration}m</div>${priorityBadgeHTML(e.priority)}</div>
+        <div class="ev-who">${e.assignee}</div>
+      </div>`).join("");
+
+  const upcoming = EVENTS.filter(e=>e.date>=ds).slice(0,4)
+    .map(e=>`<div class="upcoming-item"><div class="up-bar" style="background:${e.color}"></div><div><div class="up-name">${e.title}</div><div class="up-date">${e.date} ${e.time}</div></div></div>`).join("");
+
+  document.getElementById("cal-side").innerHTML = `
+    <div class="side-card">
+      <div class="side-title">${MONTHS[calMonth]} ${calSelected}</div>
+      <div class="side-count">${evs.length} EVENT${evs.length!==1?"S":""}</div>
+      ${evHTML}
+    </div>
+    <div class="side-card">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:#475569;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Upcoming</div>
+      ${upcoming}
+    </div>`;
+}
+</script>
+</body>
+</html>
